@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Journée Douce</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F5E6D3">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-top">
+        <h1>🌿 Journée Douce</h1>
+        <button id="viewWeekBtn" class="btn-outline">Semaine</button>
+      </div>
+      <div class="header-info">
+        <span id="dateDisplay"></span>
+        <span id="capacityDisplay"></span>
+      </div>
+    </header>
+
+    <!-- Vue Journée -->
+    <main id="dayView">
+      <div id="dayBlocks"></div>
+    </main>
+
+    <!-- Vue Semaine -->
+    <main id="weekView" style="display:none;">
+      <div id="weekBlocks"></div>
+    </main>
+
+    <!-- Barre d'actions -->
+    <footer>
+      <button id="addTaskBtn" class="btn-primary">+ Ajouter un bloc</button>
+      <button id="resetDayBtn" class="btn-secondary">Réinitialiser</button>
+    </footer>
+
+    <!-- Modal Ajout -->
+    <div id="addModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Ajouter un bloc</h2>
+        <form id="addForm">
+          <label>Nom du bloc</label>
+          <input type="text" id="taskName" placeholder="ex: Ménage" required>
+          
+          <label>Durée (minutes)</label>
+          <input type="number" id="taskDuration" placeholder="60" min="1" required>
+          
+          <label>Type</label>
+          <select id="taskType">
+            <option value="task">Tâche normale</option>
+            <option value="free">Temps libre</option>
+            <option value="fixed">Rendez-vous fixe</option>
+          </select>
+
+          <label>Heure (optionnel)</label>
+          <input type="time" id="taskTime">
+
+          <button type="submit" class="btn-primary">Ajouter</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Dérapage -->
+    <div id="debordModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>⚠️ Je déborde</h2>
+        <p id="debordInfo">Tâche en cours : <span id="debordTaskName"></span></p>
+        <label>Dépassement (minutes)</label>
+        <input type="number" id="debordMinutes" value="15" min="5">
+        <button id="debordAutoBtn" class="btn-primary">Proposer une solution auto</button>
+        <div id="debordSolution"></div>
+        <button id="debordApplyBtn" class="btn-secondary" style="display:none;">Appliquer</button>
+      </div>
+    </div>
+
+    <!-- Modal Bilan -->
+    <div id="bilanModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>🌙 Bilan de la journée</h2>
+        <div id="bilanContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
