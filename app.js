@@ -80,37 +80,87 @@ function migrateTasks() {
   }
 }
 
-// ===== RENDU JOUR =====
+// ===== MODIFIER UNE TÂCHE =====
+function editTask(index) {
+  const task = tasks[index];
+  if (!task) return;
+  
+  document.getElementById('editTaskId').value = index;
+  document.getElementById('editTaskName').value = task.name;
+  document.getElementById('editTaskDuration').value = task.duration;
+  document.getElementById('editTaskType').value = task.type;
+  document.getElementById('editTaskTime').value = task.time || '';
+  document.getElementById('editTaskDate').value = task.date || new Date().toISOString().split('T')[0];
+  
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function saveEdit() {
+  const index = parseInt(document.getElementById('editTaskId').value);
+  const task = tasks[index];
+  if (!task) return;
+  
+  task.name = document.getElementById('editTaskName').value;
+  task.duration = parseInt(document.getElementById('editTaskDuration').value);
+  task.type = document.getElementById('editTaskType').value;
+  task.time = document.getElementById('editTaskTime').value || '--:--';
+  task.date = document.getElementById('editTaskDate').value || new Date().toISOString().split('T')[0];
+  
+  saveTasks();
+  renderDay();
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// ===== RENDU JOUR (avec boutons Modifier et Supprimer) =====
 function renderDay() {
   const container = document.getElementById('dayBlocks');
-  container.innerHTML = '';
   const today = new Date().toISOString().split('T')[0];
   const dayTasks = tasks.filter(t => t.date === today && t.status !== 'cancelled');
   const sorted = [...dayTasks].sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
   
-  sorted.forEach((task, index) => {
-    const bloc = document.createElement('div');
-    const isActive = currentTaskIndex !== null && tasks.indexOf(task) === currentTaskIndex;
-    bloc.className = `bloc ${task.type} ${task.done ? 'done' : ''} ${isActive ? 'active' : ''}`;
-    const realIndex = tasks.indexOf(task);
-    bloc.innerHTML = `
-      <span class="time">${task.time || '--:--'}</span>
-      <span class="name">${task.name} ${task.recurring ? '🔄' : ''} ${task.status === 'missed' ? '❌' : ''} ${task.status === 'postponed' ? '📅' : ''}</span>
-      <span class="duration">${task.duration}min${task.realTime ? ` (réel:${task.realTime}min)` : ''}</span>
-      <div class="actions">
-        ${!task.done && !isActive ? `<button data-action="start" data-index="${realIndex}">▶️</button>` : ''}
-        ${isActive ? `<button data-action="stop" data-index="${realIndex}">⏹</button>` : ''}
-        ${task.done ? `<button data-action="reset" data-index="${realIndex}">↩️</button>` : ''}
-        ${!task.done && !isActive ? `<button data-action="delete" data-index="${realIndex}">🗑️</button>` : ''}
-        ${isActive ? `<button data-action="debord" data-index="${realIndex}">⚠️</button>` : ''}
-      </div>
-    `;
-    container.appendChild(bloc);
-  });
+  if (container.children.length === sorted.length) {
+    // Mise à jour légère
+    container.querySelectorAll('.bloc').forEach((el, i) => {
+      const task = sorted[i];
+      if (!task) return;
+      const nameSpan = el.querySelector('.name');
+      const durationSpan = el.querySelector('.duration');
+      const timeSpan = el.querySelector('.time');
+      
+      if (nameSpan) nameSpan.textContent = task.name + (task.recurring ? ' 🔄' : '') + (task.status === 'missed' ? ' ❌' : '') + (task.status === 'postponed' ? ' 📅' : '');
+      if (durationSpan) durationSpan.textContent = task.duration + 'min' + (task.realTime ? ` (réel:${task.realTime}min)` : '');
+      if (timeSpan) timeSpan.textContent = task.time || '--:--';
+      
+      el.className = `bloc ${task.type} ${task.done ? 'done' : ''} ${tasks.indexOf(task) === currentTaskIndex ? 'active' : ''}`;
+    });
+  } else {
+    container.innerHTML = '';
+    sorted.forEach((task) => {
+      const bloc = document.createElement('div');
+      const realIndex = tasks.indexOf(task);
+      const isActive = currentTaskIndex !== null && realIndex === currentTaskIndex;
+      
+      bloc.className = `bloc ${task.type} ${task.done ? 'done' : ''} ${isActive ? 'active' : ''}`;
+      bloc.innerHTML = `
+        <span class="time">${task.time || '--:--'}</span>
+        <span class="name">${task.name} ${task.recurring ? '🔄' : ''} ${task.status === 'missed' ? '❌' : ''} ${task.status === 'postponed' ? '📅' : ''}</span>
+        <span class="duration">${task.duration}min${task.realTime ? ` (réel:${task.realTime}min)` : ''}</span>
+        <div class="actions">
+          ${!task.done && !isActive ? `<button data-action="start" data-index="${realIndex}">▶️</button>` : ''}
+          ${isActive ? `<button data-action="stop" data-index="${realIndex}">⏹</button>` : ''}
+          ${task.done ? `<button data-action="reset" data-index="${realIndex}">↩️</button>` : ''}
+          ${!task.done && !isActive ? `<button data-action="edit" data-index="${realIndex}">✏️</button>` : ''}
+          ${!task.done && !isActive ? `<button data-action="delete" data-index="${realIndex}">🗑️</button>` : ''}
+          ${isActive ? `<button data-action="debord" data-index="${realIndex}">⚠️</button>` : ''}
+        </div>
+      `;
+      container.appendChild(bloc);
+    });
+  }
   updateCapacity();
 }
 
-// ===== RENDU SEMAINE =====
+// ===== RENDU SEMAINE (avec boutons Modifier et Supprimer) =====
 function renderWeek() {
   const container = document.getElementById('weekGrid');
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -136,6 +186,10 @@ function renderWeek() {
       html += `<div class="${cls}" data-id="${task.id}">`;
       html += `<span class="task-time">${task.time || '--:--'}</span>`;
       html += `${task.name} ${task.recurring ? '🔄' : ''}`;
+      html += `<span style="float:right;">`;
+      html += `<button class="week-edit-btn" data-id="${task.id}" style="background:none;border:none;cursor:pointer;font-size:12px;margin-right:4px;">✏️</button>`;
+      html += `<button class="week-delete-btn" data-id="${task.id}" style="background:none;border:none;cursor:pointer;font-size:12px;color:#c0392b;">🗑️</button>`;
+      html += `</span>`;
       html += `</div>`;
     });
     
@@ -145,24 +199,51 @@ function renderWeek() {
   html += '</div>';
   container.innerHTML = html;
   
-  // Ajouter les écouteurs sur les tâches de la semaine
-  document.querySelectorAll('.week-task').forEach(el => {
-    el.addEventListener('click', function() {
+  // Écouteurs pour les boutons Modifier et Supprimer
+  container.querySelectorAll('.week-edit-btn').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
       const id = parseInt(this.dataset.id);
       const task = tasks.find(t => t.id === id);
       if (task) {
-        // Basculer vers la vue Jour et sélectionner la tâche
-        document.getElementById('weekView').style.display = 'none';
-        document.getElementById('dayView').style.display = 'block';
-        document.getElementById('viewWeekBtn').textContent = 'Semaine';
-        renderDay();
-        // Scroll vers la tâche (optionnel)
+        const index = tasks.indexOf(task);
+        editTask(index);
       }
     });
   });
   
-  // Ajouter les écouteurs sur les boutons "+" de la semaine
-  document.querySelectorAll('.week-add-btn').forEach(el => {
+  container.querySelectorAll('.week-delete-btn').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = parseInt(this.dataset.id);
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        const index = tasks.indexOf(task);
+        if (confirm(`Supprimer "${task.name}" ?`)) {
+          tasks.splice(index, 1);
+          saveTasks();
+          renderWeek();
+          renderDay();
+        }
+      }
+    });
+  });
+  
+  container.querySelectorAll('.week-task').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return;
+      const id = parseInt(this.dataset.id);
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        document.getElementById('weekView').style.display = 'none';
+        document.getElementById('dayView').style.display = 'block';
+        document.getElementById('viewWeekBtn').textContent = 'Semaine';
+        renderDay();
+      }
+    });
+  });
+  
+  container.querySelectorAll('.week-add-btn').forEach(el => {
     el.addEventListener('click', function() {
       const date = this.dataset.date;
       document.getElementById('taskDate').value = date;
@@ -240,6 +321,8 @@ function setupListeners() {
       resetTask(index);
     } else if (action === 'delete') {
       deleteTask(index);
+    } else if (action === 'edit') {
+      editTask(index);
     } else if (action === 'debord') {
       openDebord(index);
     }
@@ -276,6 +359,16 @@ function setupListeners() {
       saveTasks();
       renderDay();
     }
+  });
+  
+  // Modale d'édition
+  document.getElementById('editForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveEdit();
+  });
+  
+  document.querySelector('#editModal .close').addEventListener('click', () => {
+    document.getElementById('editModal').style.display = 'none';
   });
 }
 
@@ -412,7 +505,6 @@ function detectRecurring(task) {
     if (!existing) {
       if (confirm(`🔁 J'ai remarqué que tu fais "${name}" régulièrement. Veux-tu que je la propose automatiquement chaque jour ?`)) {
         const today = new Date().toISOString().split('T')[0];
-        // Ajouter la tâche récurrente pour les jours à venir
         for (let i = 1; i <= 7; i++) {
           const d = new Date();
           d.setDate(d.getDate() + i);
