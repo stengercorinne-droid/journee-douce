@@ -1,4 +1,3 @@
-/* ===== RESET & BASE ===== */
 * {
   margin: 0;
   padding: 0;
@@ -14,7 +13,6 @@ body {
   margin: 0 auto;
 }
 
-/* ===== PASTEL CHAUD ===== */
 :root {
   --beige: #F5E6D3;
   --terre: #C4A88A;
@@ -27,7 +25,6 @@ body {
   --shadow: rgba(61, 44, 42, 0.08);
 }
 
-/* ===== HEADER ===== */
 header {
   margin-bottom: 24px;
 }
@@ -36,6 +33,7 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 .header-top h1 {
   font-size: 24px;
@@ -56,10 +54,10 @@ header {
   justify-content: space-between;
   font-size: 14px;
   color: #7A6A66;
+  flex-wrap: wrap;
 }
 
-/* ===== BLOCS ===== */
-#dayBlocks, #weekBlocks {
+#dayBlocks, #weekGrid {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -129,7 +127,77 @@ header {
   padding: 0 4px;
 }
 
-/* ===== FOOTER ===== */
+/* Vue Semaine */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.week-day {
+  background: var(--blanc);
+  border-radius: 12px;
+  padding: 8px 4px;
+  box-shadow: 0 1px 4px var(--shadow);
+  min-height: 200px;
+}
+.week-day .day-label {
+  font-size: 11px;
+  color: #7A6A66;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.week-day .day-total {
+  font-size: 10px;
+  text-align: center;
+  color: #7A6A66;
+  margin-bottom: 4px;
+}
+.week-task {
+  font-size: 10px;
+  background: #F5F0EC;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin-bottom: 2px;
+  border-left: 3px solid var(--terre);
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.week-task.recurring {
+  border-left-color: var(--sauge);
+}
+.week-task.missed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.week-task.free {
+  background: #F9F5F2;
+  border-left-color: #D4C9C4;
+}
+.week-task.fixed {
+  border-left-color: var(--bleu);
+}
+.week-task .task-time {
+  font-weight: 600;
+  color: var(--terre);
+  margin-right: 4px;
+}
+.week-add-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 16px;
+  color: var(--terre);
+  background: transparent;
+  border: 1px dashed var(--terre);
+  border-radius: 6px;
+  padding: 4px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
 footer {
   display: flex;
   gap: 12px;
@@ -164,7 +232,6 @@ footer {
   min-width: 120px;
 }
 
-/* ===== MODAL ===== */
 .modal {
   position: fixed;
   top: 0;
@@ -218,47 +285,26 @@ footer {
   margin-top: 16px;
   width: 100%;
 }
-
-/* ===== WEEK ===== */
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  margin-top: 12px;
-}
-.week-day {
-  background: var(--blanc);
-  border-radius: 12px;
-  padding: 8px 4px;
-  text-align: center;
-  box-shadow: 0 1px 4px var(--shadow);
-}
-.week-day .day-label {
-  font-size: 11px;
-  color: #7A6A66;
-}
-.week-day .day-bar {
-  height: 40px;
-  background: var(--beige);
-  border-radius: 8px;
+.imprevu-option {
+  display: block;
+  width: 100%;
+  padding: 12px;
   margin: 6px 0;
-  overflow: hidden;
-  position: relative;
+  background: var(--beige);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left;
 }
-.week-day .day-bar .fill {
-  height: 100%;
-  background: var(--sauge);
-  border-radius: 8px;
-  transition: width 0.3s;
-}
-.week-day .day-total {
-  font-size: 12px;
-  font-weight: 600;
+.imprevu-option:active {
+  background: #E8DDD7;
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 400px) {
   .header-top h1 { font-size: 20px; }
   .bloc { padding: 10px 12px; }
   .bloc .name { font-size: 14px; }
+  .week-day { min-height: 150px; }
+  .week-task { font-size: 9px; }
 }
