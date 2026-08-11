@@ -417,4 +417,111 @@ function detectRecurring(task) {
           const d = new Date();
           d.setDate(d.getDate() + i);
           const dateStr = d.toISOString().split('T')[0];
-          if (!tasks.find(t => t.name === name && t.date === dateStr && t.recurring === 'daily
+          if (!tasks.find(t => t.name === name && t.date === dateStr && t.recurring === 'daily')) {
+            tasks.push({
+              id: Date.now() + i,
+              name: name,
+              duration: task.duration,
+              type: task.type,
+              time: task.time,
+              date: dateStr,
+              done: false,
+              realTime: null,
+              recurring: 'daily',
+              status: 'planned',
+              missedDate: null,
+              postponedDate: null
+            });
+          }
+        }
+        saveTasks();
+        renderDay();
+      }
+    }
+  }
+}
+
+// ===== PRÉPARER DEMAIN =====
+function setupPrepareTomorrow() {
+  document.getElementById('prepareTomorrowBtn').addEventListener('click', () => {
+    const container = document.getElementById('prepareContent');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split('T')[0];
+    const dayTasks = tasks.filter(t => t.date === dateStr && t.status !== 'cancelled');
+    const sorted = [...dayTasks].sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+    
+    let html = `<p>📅 ${tomorrow.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>`;
+    if (sorted.length === 0) {
+      html += `<p>Aucune tâche planifiée pour demain.</p>`;
+    } else {
+      html += `<ul style="list-style:none;padding:0;">`;
+      sorted.forEach(t => {
+        html += `<li style="padding:6px 0;border-bottom:1px solid #eee;">${t.time} - ${t.name} (${t.duration}min) ${t.recurring ? '🔄' : ''}</li>`;
+      });
+      html += `</ul>`;
+    }
+    html += `<button id="addTomorrowTask" class="btn-primary" style="margin-top:12px;">Ajouter une tâche pour demain</button>`;
+    container.innerHTML = html;
+    document.getElementById('addTomorrowTask').addEventListener('click', () => {
+      document.getElementById('taskDate').value = dateStr;
+      document.getElementById('addModal').style.display = 'flex';
+      document.getElementById('prepareModal').style.display = 'none';
+    });
+    document.getElementById('prepareModal').style.display = 'flex';
+  });
+}
+
+// ===== GESTION DES IMPRÉVUS =====
+function checkMissedTasks() {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  const missed = tasks.filter(t => t.date === yesterdayStr && !t.done && t.status === 'planned' && t.type === 'task');
+  
+  if (missed.length > 0) {
+    setTimeout(() => {
+      const container = document.getElementById('imprevuContent');
+      let html = `<p>Tu n'as pas réalisé ces tâches hier :</p><ul style="list-style:none;padding:0;">`;
+      missed.forEach(t => {
+        html += `<li style="padding:6px 0;border-bottom:1px solid #eee;">${t.time} - ${t.name}</li>`;
+      });
+      html += `</ul><p>Que veux-tu faire ?</p>`;
+      html += `<button class="imprevu-option" data-action="catchup">✅ Rattraper aujourd'hui</button>`;
+      html += `<button class="imprevu-option" data-action="postpone">📅 Reporter à demain</button>`;
+      html += `<button class="imprevu-option" data-action="cancel">❌ Annuler pour cette semaine</button>`;
+      html += `<button class="imprevu-option" data-action="ignore">⏭️ Ignorer (laisser en plan)</button>`;
+      container.innerHTML = html;
+      
+      container.querySelectorAll('.imprevu-option').forEach(el => {
+        el.addEventListener('click', function() {
+          const action = this.dataset.action;
+          missed.forEach(t => {
+            if (action === 'catchup') {
+              t.date = today;
+              t.status = 'planned';
+            } else if (action === 'postpone') {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              t.date = tomorrow.toISOString().split('T')[0];
+              t.status = 'postponed';
+              t.postponedDate = new Date().toISOString().split('T')[0];
+            } else if (action === 'cancel') {
+              t.status = 'cancelled';
+            } else if (action === 'ignore') {
+              t.status = 'missed';
+              t.missedDate = new Date().toISOString().split('T')[0];
+            }
+          });
+          saveTasks();
+          renderDay();
+          document.getElementById('imprevuModal').style.display = 'none';
+        });
+      });
+      
+      document.getElementById('imprevuModal').style.display = 'flex';
+    }, 3000);
+  }
+}
