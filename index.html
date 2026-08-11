@@ -73,6 +73,37 @@
       </div>
     </div>
 
+    <!-- Modal Modifier -->
+    <div id="editModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>✏️ Modifier la tâche</h2>
+        <form id="editForm">
+          <input type="hidden" id="editTaskId">
+          <label>Nom</label>
+          <input type="text" id="editTaskName" required>
+          
+          <label>Durée (minutes)</label>
+          <input type="number" id="editTaskDuration" min="1" required>
+          
+          <label>Type</label>
+          <select id="editTaskType">
+            <option value="task">Tâche normale</option>
+            <option value="free">Temps libre</option>
+            <option value="fixed">Rendez-vous fixe</option>
+          </select>
+
+          <label>Heure</label>
+          <input type="time" id="editTaskTime">
+
+          <label>Date</label>
+          <input type="date" id="editTaskDate">
+
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal Dérapage -->
     <div id="debordModal" class="modal" style="display:none;">
       <div class="modal-content">
