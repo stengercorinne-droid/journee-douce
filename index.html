@@ -16,7 +16,10 @@
     <header>
       <div class="header-top">
         <h1>🌿 Journée Douce</h1>
-        <button id="viewWeekBtn" class="btn-outline">Semaine</button>
+        <div>
+          <button id="viewWeekBtn" class="btn-outline">Semaine</button>
+          <button id="prepareTomorrowBtn" class="btn-outline" style="margin-left:8px;">🌙 Demain</button>
+        </div>
       </div>
       <div class="header-info">
         <span id="dateDisplay"></span>
@@ -31,7 +34,7 @@
 
     <!-- Vue Semaine -->
     <main id="weekView" style="display:none;">
-      <div id="weekBlocks"></div>
+      <div id="weekGrid"></div>
     </main>
 
     <!-- Barre d'actions -->
@@ -62,6 +65,9 @@
           <label>Heure (optionnel)</label>
           <input type="time" id="taskTime">
 
+          <label>Date (optionnel)</label>
+          <input type="date" id="taskDate">
+
           <button type="submit" class="btn-primary">Ajouter</button>
         </form>
       </div>
@@ -87,6 +93,24 @@
         <span class="close">&times;</span>
         <h2>🌙 Bilan de la journée</h2>
         <div id="bilanContent"></div>
+      </div>
+    </div>
+
+    <!-- Modal Préparer demain -->
+    <div id="prepareModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>🌙 Préparer demain</h2>
+        <div id="prepareContent"></div>
+      </div>
+    </div>
+
+    <!-- Modal Imprévu -->
+    <div id="imprevuModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>🔔 Tâche non réalisée</h2>
+        <div id="imprevuContent"></div>
       </div>
     </div>
   </div>
