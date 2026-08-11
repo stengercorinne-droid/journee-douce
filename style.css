@@ -154,16 +154,50 @@ header {
   margin-bottom: 4px;
 }
 .week-task {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 10px;
   background: #F5F0EC;
   border-radius: 6px;
-  padding: 2px 4px;
+  padding: 4px 6px;
   margin-bottom: 2px;
   border-left: 3px solid var(--terre);
   cursor: pointer;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.week-task .task-time {
+  font-weight: 600;
+  color: var(--terre);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.week-task .task-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 4px;
+}
+.week-task .task-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.week-task .task-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+}
+.week-edit-btn {
+  color: #3D2C2A;
+}
+.week-delete-btn {
+  color: #c0392b;
 }
 .week-task.recurring {
   border-left-color: var(--sauge);
@@ -178,11 +212,6 @@ header {
 }
 .week-task.fixed {
   border-left-color: var(--bleu);
-}
-.week-task .task-time {
-  font-weight: 600;
-  color: var(--terre);
-  margin-right: 4px;
 }
 .week-add-btn {
   display: block;
