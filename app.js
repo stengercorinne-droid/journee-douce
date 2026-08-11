@@ -383,3 +383,234 @@ function startTask(index) {
   }, 1000);
   renderDay();
 }
+
+function stopTask(index) {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  const task = tasks[index];
+  if (task) {
+    const realTime = Math.round(seconds / 60);
+    task.realTime = realTime > 0 ? realTime : task.duration;
+    task.done = true;
+    task.status = 'done';
+    saveTasks();
+    detectRecurring(task);
+  }
+  currentTaskIndex = null;
+  renderDay();
+  if (tasks.filter(t => t.date === new Date().toISOString().split('T')[0]).every(t => t.done)) {
+    openBilan();
+  }
+}
+
+function resetTask(index) {
+  const task = tasks[index];
+  if (task) {
+    task.done = false;
+    task.realTime = null;
+    task.status = 'planned';
+    saveTasks();
+    renderDay();
+  }
+}
+
+function deleteTask(index) {
+  if (confirm('Supprimer cette tâche ?')) {
+    tasks.splice(index, 1);
+    saveTasks();
+    renderDay();
+  }
+}
+
+// ===== DÉRAPAGE =====
+function setupDebord() {
+  document.getElementById('debordAutoBtn').addEventListener('click', () => {
+    const minutes = parseInt(document.getElementById('debordMinutes').value) || 15;
+    const solution = document.getElementById('debordSolution');
+    const flexibles = tasks.filter(t => !t.done && t.type === 'free' && t.id !== tasks[currentTaskIndex]?.id);
+    let totalGagne = 0;
+    let html = '<p>✅ Solution proposée :</p><ul>';
+    for (const t of flexibles) {
+      if (totalGagne >= minutes) break;
+      const reduction = Math.min(t.duration, minutes - totalGagne);
+      html += `<li>Réduire "${t.name}" de ${reduction}min (${t.duration}min → ${t.duration - reduction}min)</li>`;
+      totalGagne += reduction;
+      t.duration -= reduction;
+      if (t.duration <= 0) t.duration = 1;
+    }
+    if (totalGagne < minutes) {
+      html += `<li>⚠️ Pas assez de temps libre. Il faudra reporter une tâche.</li>`;
+    }
+    html += `</ul><p>Total gagné : ${Math.min(totalGagne, minutes)}min</p>`;
+    solution.innerHTML = html + `<button id="applyDebordBtn" class="btn-primary">Appliquer</button>`;
+    document.getElementById('applyDebordBtn').addEventListener('click', () => {
+      saveTasks();
+      renderDay();
+      document.getElementById('debordModal').style.display = 'none';
+    });
+  });
+}
+
+function openDebord(index) {
+  const task = tasks[index];
+  if (!task) return;
+  document.getElementById('debordTaskName').textContent = task.name;
+  document.getElementById('debordMinutes').value = 15;
+  document.getElementById('debordSolution').innerHTML = '';
+  document.getElementById('debordModal').style.display = 'flex';
+}
+
+// ===== BILAN =====
+function setupBilan() {
+  document.querySelectorAll('.close').forEach(el => {
+    el.addEventListener('click', () => {
+      document.getElementById('bilanModal').style.display = 'none';
+    });
+  });
+}
+
+function openBilan() {
+  const container = document.getElementById('bilanContent');
+  const today = new Date().toISOString().split('T')[0];
+  const dayTasks = tasks.filter(t => t.date === today);
+  const total = dayTasks.length;
+  const done = dayTasks.filter(t => t.done).length;
+  const totalTime = dayTasks.reduce((sum, t) => sum + t.duration, 0);
+  const realTime = dayTasks.reduce((sum, t) => sum + (t.realTime || t.duration), 0);
+  const diff = realTime - totalTime;
+  const html = `
+    <p>✅ Tâches réalisées : ${done}/${total}</p>
+    <p>⏱ Temps prévu : ${Math.round(totalTime/60)}h</p>
+    <p>⏱ Temps réel : ${Math.round(realTime/60)}h</p>
+    <p>📊 Écart : ${diff > 0 ? '+' : ''}${diff}min</p>
+    ${dayTasks.filter(t => t.realTime && Math.abs(t.realTime - t.duration) > 5).map(t => 
+      `<p>• ${t.name} : ${t.duration}min prévu → ${t.realTime}min réel</p>`
+    ).join('')}
+  `;
+  container.innerHTML = html;
+  document.getElementById('bilanModal').style.display = 'flex';
+}
+
+// ===== DÉTECTION DES RÉCURRENTES =====
+function detectRecurring(task) {
+  const name = task.name;
+  const similar = tasks.filter(t => t.name === name && t.done && t.date !== task.date);
+  if (similar.length >= 3) {
+    const existing = tasks.find(t => t.name === name && t.recurring === 'daily');
+    if (!existing) {
+      if (confirm(`🔁 J'ai remarqué que tu fais "${name}" régulièrement. Veux-tu que je la propose automatiquement chaque jour ?`)) {
+        const today = new Date().toISOString().split('T')[0];
+        for (let i = 1; i <= 7; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          if (!tasks.find(t => t.name === name && t.date === dateStr && t.recurring === 'daily')) {
+            tasks.push({
+              id: Date.now() + i,
+              name: name,
+              duration: task.duration,
+              type: task.type,
+              time: task.time,
+              date: dateStr,
+              done: false,
+              realTime: null,
+              recurring: 'daily',
+              status: 'planned',
+              missedDate: null,
+              postponedDate: null
+            });
+          }
+        }
+        saveTasks();
+        renderDay();
+      }
+    }
+  }
+}
+
+// ===== PRÉPARER DEMAIN =====
+function setupPrepareTomorrow() {
+  document.getElementById('prepareTomorrowBtn').addEventListener('click', () => {
+    const container = document.getElementById('prepareContent');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split('T')[0];
+    const dayTasks = tasks.filter(t => t.date === dateStr && t.status !== 'cancelled');
+    const sorted = [...dayTasks].sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+    
+    let html = `<p>📅 ${tomorrow.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>`;
+    if (sorted.length === 0) {
+      html += `<p>Aucune tâche planifiée pour demain.</p>`;
+    } else {
+      html += `<ul style="list-style:none;padding:0;">`;
+      sorted.forEach(t => {
+        html += `<li style="padding:6px 0;border-bottom:1px solid #eee;">${t.time} - ${t.name} (${t.duration}min) ${t.recurring ? '🔄' : ''}</li>`;
+      });
+      html += `</ul>`;
+    }
+    html += `<button id="addTomorrowTask" class="btn-primary" style="margin-top:12px;">Ajouter une tâche pour demain</button>`;
+    container.innerHTML = html;
+    document.getElementById('addTomorrowTask').addEventListener('click', () => {
+      document.getElementById('taskDate').value = dateStr;
+      document.getElementById('addModal').style.display = 'flex';
+      document.getElementById('prepareModal').style.display = 'none';
+    });
+    document.getElementById('prepareModal').style.display = 'flex';
+  });
+}
+
+// ===== GESTION DES IMPRÉVUS =====
+function checkMissedTasks() {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  const missed = tasks.filter(t => t.date === yesterdayStr && !t.done && t.status === 'planned' && t.type === 'task');
+  
+  if (missed.length > 0) {
+    setTimeout(() => {
+      const container = document.getElementById('imprevuContent');
+      let html = `<p>Tu n'as pas réalisé ces tâches hier :</p><ul style="list-style:none;padding:0;">`;
+      missed.forEach(t => {
+        html += `<li style="padding:6px 0;border-bottom:1px solid #eee;">${t.time} - ${t.name}</li>`;
+      });
+      html += `</ul><p>Que veux-tu faire ?</p>`;
+      html += `<button class="imprevu-option" data-action="catchup">✅ Rattraper aujourd'hui</button>`;
+      html += `<button class="imprevu-option" data-action="postpone">📅 Reporter à demain</button>`;
+      html += `<button class="imprevu-option" data-action="cancel">❌ Annuler pour cette semaine</button>`;
+      html += `<button class="imprevu-option" data-action="ignore">⏭️ Ignorer (laisser en plan)</button>`;
+      container.innerHTML = html;
+      
+      container.querySelectorAll('.imprevu-option').forEach(el => {
+        el.addEventListener('click', function() {
+          const action = this.dataset.action;
+          missed.forEach(t => {
+            if (action === 'catchup') {
+              t.date = today;
+              t.status = 'planned';
+            } else if (action === 'postpone') {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              t.date = tomorrow.toISOString().split('T')[0];
+              t.status = 'postponed';
+              t.postponedDate = new Date().toISOString().split('T')[0];
+            } else if (action === 'cancel') {
+              t.status = 'cancelled';
+            } else if (action === 'ignore') {
+              t.status = 'missed';
+              t.missedDate = new Date().toISOString().split('T')[0];
+            }
+          });
+          saveTasks();
+          renderDay();
+          document.getElementById('imprevuModal').style.display = 'none';
+        });
+      });
+      
+      document.getElementById('imprevuModal').style.display = 'flex';
+    }, 3000);
+  }
+}
