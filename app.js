@@ -34,81 +34,22 @@ function loadTasks() {
       { id: Date.now() + 2, name: 'Promenade chien', duration: 60, type: 'task', time: '06:30', date: today, done: false, realTime: null, recurring: 'daily', status: 'planned', missedDate: null, postponedDate: null },
       { id: Date.now() + 3, name: 'Ménage du bas', duration: 60, type: 'task', time: '07:30', date: today, done: false, realTime: null, recurring: 'weekly', status: 'planned', missedDate: null, postponedDate: null },
       { id: Date.now() + 4, name: 'Courses', duration: 90, type: 'task', time: '08:30', date: today, done: false, realTime: null, recurring: 'weekly', status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 5, name: 'Projets', duration: 120, type: 'task', time: '10:00', date: today, done: false, realTime: null, recurring: null, status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 6, name: 'Repas midi', duration: 30, type: 'task', time: '12:00', date: today, done: false, realTime: null, recurring: 'daily', status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 7, name: 'Projets (suite)', duration: 180, type: 'task', time: '12:30', date: today, done: false, realTime: null, recurring: null, status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 8, name: 'Prépa repas soir', duration: 30, type: 'task', time: '15:30', date: today, done: false, realTime: null, recurring: 'daily', status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 9, name: 'Sortie chiens + chat', duration: 30, type: 'task', time: '16:00', date: today, done: false, realTime: null, recurring: 'daily', status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 10, name: 'Douche / repos', duration: 60, type: 'free', time: '16:30', date: today, done: false, realTime: null, recurring: null, status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 11, name: 'Dîner + rangement', duration: 60, type: 'task', time: '17:30', date: today, done: false, realTime: null, recurring: 'daily', status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 12, name: 'Télé / repos', duration: 120, type: 'free', time: '18:30', date: today, done: false, realTime: null, recurring: null, status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 13, name: 'Dernière sortie', duration: 15, type: 'task', time: '20:30', date: today, done: false, realTime: null, recurring: 'daily', status: 'planned', missedDate: null, postponedDate: null },
-      { id: Date.now() + 14, name: 'Temps libre / coucher', duration: 135, type: 'free', time: '20:45', date: today, done: false, realTime: null, recurring: null, status: 'planned', missedDate: null, postponedDate: null },
     ];
     saveTasks();
   }
 }
 
-// ===== MIGRATION =====
 function migrateTasks() {
   let changed = false;
   const today = new Date().toISOString().split('T')[0];
   tasks.forEach(t => {
-    if (!t.date) {
-      t.date = today;
-      changed = true;
-    }
-    if (!t.status) {
-      t.status = t.done ? 'done' : 'planned';
-      changed = true;
-    }
-    if (!t.recurring) {
-      t.recurring = null;
-      changed = true;
-    }
-    if (!t.missedDate) {
-      t.missedDate = null;
-      changed = true;
-    }
-    if (!t.postponedDate) {
-      t.postponedDate = null;
-      changed = true;
-    }
+    if (!t.date) { t.date = today; changed = true; }
+    if (!t.status) { t.status = t.done ? 'done' : 'planned'; changed = true; }
+    if (!t.recurring) { t.recurring = null; changed = true; }
+    if (!t.missedDate) { t.missedDate = null; changed = true; }
+    if (!t.postponedDate) { t.postponedDate = null; changed = true; }
   });
-  if (changed) {
-    saveTasks();
-  }
-}
-
-// ===== MODIFIER UNE TÂCHE =====
-function editTask(index) {
-  const task = tasks[index];
-  if (!task) return;
-  
-  document.getElementById('editTaskId').value = index;
-  document.getElementById('editTaskName').value = task.name;
-  document.getElementById('editTaskDuration').value = task.duration;
-  document.getElementById('editTaskType').value = task.type;
-  document.getElementById('editTaskTime').value = task.time || '';
-  document.getElementById('editTaskDate').value = task.date || new Date().toISOString().split('T')[0];
-  
-  document.getElementById('editModal').style.display = 'flex';
-}
-
-function saveEdit() {
-  const index = parseInt(document.getElementById('editTaskId').value);
-  const task = tasks[index];
-  if (!task) return;
-  
-  task.name = document.getElementById('editTaskName').value;
-  task.duration = parseInt(document.getElementById('editTaskDuration').value);
-  task.type = document.getElementById('editTaskType').value;
-  task.time = document.getElementById('editTaskTime').value || '--:--';
-  task.date = document.getElementById('editTaskDate').value || new Date().toISOString().split('T')[0];
-  
-  saveTasks();
-  renderDay();
-  document.getElementById('editModal').style.display = 'none';
+  if (changed) saveTasks();
 }
 
 // ===== RENDU JOUR =====
@@ -118,44 +59,28 @@ function renderDay() {
   const dayTasks = tasks.filter(t => t.date === today && t.status !== 'cancelled');
   const sorted = [...dayTasks].sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
   
-  if (container.children.length === sorted.length) {
-    container.querySelectorAll('.bloc').forEach((el, i) => {
-      const task = sorted[i];
-      if (!task) return;
-      const nameSpan = el.querySelector('.name');
-      const durationSpan = el.querySelector('.duration');
-      const timeSpan = el.querySelector('.time');
-      
-      if (nameSpan) nameSpan.textContent = task.name + (task.recurring ? ' 🔄' : '') + (task.status === 'missed' ? ' ❌' : '') + (task.status === 'postponed' ? ' 📅' : '');
-      if (durationSpan) durationSpan.textContent = task.duration + 'min' + (task.realTime ? ` (réel:${task.realTime}min)` : '');
-      if (timeSpan) timeSpan.textContent = task.time || '--:--';
-      
-      el.className = `bloc ${task.type} ${task.done ? 'done' : ''} ${tasks.indexOf(task) === currentTaskIndex ? 'active' : ''}`;
-    });
-  } else {
-    container.innerHTML = '';
-    sorted.forEach((task) => {
-      const bloc = document.createElement('div');
-      const realIndex = tasks.indexOf(task);
-      const isActive = currentTaskIndex !== null && realIndex === currentTaskIndex;
-      
-      bloc.className = `bloc ${task.type} ${task.done ? 'done' : ''} ${isActive ? 'active' : ''}`;
-      bloc.innerHTML = `
-        <span class="time">${task.time || '--:--'}</span>
-        <span class="name">${task.name} ${task.recurring ? '🔄' : ''} ${task.status === 'missed' ? '❌' : ''} ${task.status === 'postponed' ? '📅' : ''}</span>
-        <span class="duration">${task.duration}min${task.realTime ? ` (réel:${task.realTime}min)` : ''}</span>
-        <div class="actions">
-          ${!task.done && !isActive ? `<button data-action="start" data-index="${realIndex}">▶️</button>` : ''}
-          ${isActive ? `<button data-action="stop" data-index="${realIndex}">⏹</button>` : ''}
-          ${task.done ? `<button data-action="reset" data-index="${realIndex}">↩️</button>` : ''}
-          ${!task.done && !isActive ? `<button data-action="edit" data-index="${realIndex}">✏️</button>` : ''}
-          ${!task.done && !isActive ? `<button data-action="delete" data-index="${realIndex}">🗑️</button>` : ''}
-          ${isActive ? `<button data-action="debord" data-index="${realIndex}">⚠️</button>` : ''}
-        </div>
-      `;
-      container.appendChild(bloc);
-    });
-  }
+  container.innerHTML = '';
+  sorted.forEach((task) => {
+    const bloc = document.createElement('div');
+    const realIndex = tasks.indexOf(task);
+    const isActive = currentTaskIndex !== null && realIndex === currentTaskIndex;
+    
+    bloc.className = `bloc ${task.type} ${task.done ? 'done' : ''} ${isActive ? 'active' : ''}`;
+    bloc.innerHTML = `
+      <span class="time">${task.time || '--:--'}</span>
+      <span class="name">${task.name} ${task.recurring ? '🔄' : ''} ${task.status === 'missed' ? '❌' : ''} ${task.status === 'postponed' ? '📅' : ''}</span>
+      <span class="duration">${task.duration}min${task.realTime ? ` (réel:${task.realTime}min)` : ''}</span>
+      <div class="actions">
+        ${!task.done && !isActive ? `<button data-action="start" data-index="${realIndex}">▶️</button>` : ''}
+        ${isActive ? `<button data-action="stop" data-index="${realIndex}">⏹</button>` : ''}
+        ${task.done ? `<button data-action="reset" data-index="${realIndex}">↩️</button>` : ''}
+        ${!task.done && !isActive ? `<button data-action="edit" data-index="${realIndex}">✏️</button>` : ''}
+        ${!task.done && !isActive ? `<button data-action="delete" data-index="${realIndex}">🗑️</button>` : ''}
+        ${isActive ? `<button data-action="debord" data-index="${realIndex}">⚠️</button>` : ''}
+      </div>
+    `;
+    container.appendChild(bloc);
+  });
   updateCapacity();
 }
 
@@ -181,11 +106,11 @@ function renderWeek() {
     html += `<div class="day-total">${Math.round(total/60)}h</div>`;
     
     sorted.forEach(task => {
-      const cls = `week-task ${task.type} ${task.recurring ? 'recurring' : ''} ${task.status === 'missed' ? 'missed' : ''}`;
-      html += `<div class="${cls}" data-id="${task.id}">`;
+      html += `<div class="week-task" data-id="${task.id}">`;
       html += `<span class="task-time">${task.time || '--:--'}</span>`;
       html += `<span class="task-name">${task.name} ${task.recurring ? '🔄' : ''}</span>`;
       html += `<span class="task-actions">`;
+      html += `<button class="week-start-btn" data-id="${task.id}">▶️</button>`;
       html += `<button class="week-edit-btn" data-id="${task.id}">✏️</button>`;
       html += `<button class="week-delete-btn" data-id="${task.id}">🗑️</button>`;
       html += `</span>`;
@@ -197,6 +122,23 @@ function renderWeek() {
   }
   html += '</div>';
   container.innerHTML = html;
+  
+  // Écouteurs pour la semaine
+  container.querySelectorAll('.week-start-btn').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = parseInt(this.dataset.id);
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        const index = tasks.indexOf(task);
+        document.getElementById('weekView').style.display = 'none';
+        document.getElementById('dayView').style.display = 'block';
+        document.getElementById('viewWeekBtn').textContent = 'Semaine';
+        renderDay();
+        setTimeout(() => startTask(index), 100);
+      }
+    });
+  });
   
   container.querySelectorAll('.week-edit-btn').forEach(el => {
     el.addEventListener('click', function(e) {
@@ -223,20 +165,6 @@ function renderWeek() {
           renderWeek();
           renderDay();
         }
-      }
-    });
-  });
-  
-  container.querySelectorAll('.week-task').forEach(el => {
-    el.addEventListener('click', function(e) {
-      if (e.target.closest('button')) return;
-      const id = parseInt(this.dataset.id);
-      const task = tasks.find(t => t.id === id);
-      if (task) {
-        document.getElementById('weekView').style.display = 'none';
-        document.getElementById('dayView').style.display = 'block';
-        document.getElementById('viewWeekBtn').textContent = 'Semaine';
-        renderDay();
       }
     });
   });
@@ -424,6 +352,32 @@ function deleteTask(index) {
   }
 }
 
+function editTask(index) {
+  const task = tasks[index];
+  if (!task) return;
+  document.getElementById('editTaskId').value = index;
+  document.getElementById('editTaskName').value = task.name;
+  document.getElementById('editTaskDuration').value = task.duration;
+  document.getElementById('editTaskType').value = task.type;
+  document.getElementById('editTaskTime').value = task.time || '';
+  document.getElementById('editTaskDate').value = task.date || new Date().toISOString().split('T')[0];
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function saveEdit() {
+  const index = parseInt(document.getElementById('editTaskId').value);
+  const task = tasks[index];
+  if (!task) return;
+  task.name = document.getElementById('editTaskName').value;
+  task.duration = parseInt(document.getElementById('editTaskDuration').value);
+  task.type = document.getElementById('editTaskType').value;
+  task.time = document.getElementById('editTaskTime').value || '--:--';
+  task.date = document.getElementById('editTaskDate').value || new Date().toISOString().split('T')[0];
+  saveTasks();
+  renderDay();
+  document.getElementById('editModal').style.display = 'none';
+}
+
 // ===== DÉRAPAGE =====
 function setupDebord() {
   document.getElementById('debordAutoBtn').addEventListener('click', () => {
@@ -493,7 +447,7 @@ function openBilan() {
   document.getElementById('bilanModal').style.display = 'flex';
 }
 
-// ===== DÉTECTION DES RÉCURRENTES =====
+// ===== DÉTECTION RÉCURRENTES =====
 function detectRecurring(task) {
   const name = task.name;
   const similar = tasks.filter(t => t.name === name && t.done && t.date !== task.date);
@@ -561,7 +515,7 @@ function setupPrepareTomorrow() {
   });
 }
 
-// ===== GESTION DES IMPRÉVUS =====
+// ===== GESTION IMPRÉVUS =====
 function checkMissedTasks() {
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date();
